@@ -1,4 +1,4 @@
-package com.example.entity;
+package com.example.controladorgastos.entity;
 
 
 import jakarta.persistence.*;
@@ -29,7 +29,7 @@ public class Meta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private BigDecimal valor;
+    private BigDecimal valor; //valor da meta que deseja atingir
 
     private BigDecimal rendaMensal;
 

@@ -1,7 +1,7 @@
-package com.example.repository;
+package com.example.controladorgastos.repository;
 
-import com.example.entity.Gasto;
-import com.example.entity.Usuario;
+import com.example.controladorgastos.entity.Gasto;
+import com.example.controladorgastos.entity.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.math.BigDecimal;

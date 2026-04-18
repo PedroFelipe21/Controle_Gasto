@@ -1,4 +1,4 @@
-package com.example.entity;
+package com.example.controladorgastos.entity;
 
 
 import jakarta.persistence.*;
@@ -34,7 +34,7 @@ public class Gasto {
 
     private String descricao;
 
-    private BigDecimal valor;
+    private BigDecimal valorGastos;
 
     private LocalDate dataGasto;
 

@@ -1,4 +1,4 @@
-package com.example.entity;
+package com.example.controladorgastos.entity;
 
 
 import jakarta.persistence.*;

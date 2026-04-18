@@ -1,8 +1,7 @@
-package com.example.service;
+package com.example.controladorgastos.service;
 
 
-import com.example.entity.Usuario;
-import com.example.repository.UsuarioRepository;
+import com.example.controladorgastos.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
