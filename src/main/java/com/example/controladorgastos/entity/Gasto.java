@@ -17,29 +17,33 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 
-
 @Entity
-@Table (name = "gastos")
+@Table(name = "gasto")
+@Access(AccessType.FIELD)
 public class Gasto {
 
-
-    //Relacionamento
     @ManyToOne
     @JoinColumn(name = "idUsuario")
     private Usuario usuario;
 
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "idGasto")
     private Long id;
 
+    @Column(name = "descricao")
     private String descricao;
 
-    private BigDecimal valorGastos;
+    @Column(name = "valor")
+    private BigDecimal valor;
 
+    @Column(name = "dataGasto")
     private LocalDate dataGasto;
 
+    @Column(name = "categoria")
     private String categoria;
-
-
-
 }
+
+
+
+

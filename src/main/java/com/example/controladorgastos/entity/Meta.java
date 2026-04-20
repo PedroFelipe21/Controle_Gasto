@@ -27,6 +27,7 @@ public class Meta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "idMeta")
     private Long id;
 
     private BigDecimal valor; //valor da meta que deseja atingir

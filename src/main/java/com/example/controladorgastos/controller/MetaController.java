@@ -2,18 +2,20 @@ package com.example.controladorgastos.controller;
 
 import com.example.controladorgastos.entity.Meta;
 import com.example.controladorgastos.entity.Usuario;
+import com.example.controladorgastos.repository.MetasRepository;
 import com.example.controladorgastos.service.MetaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/metas")
 @RequiredArgsConstructor
 public class MetaController {
-
+    private final MetasRepository metasRepository;
     private final MetaService metasService;
 
     @PostMapping
@@ -29,16 +31,42 @@ public class MetaController {
 
     }
 
-    @GetMapping
-    public ResponseEntity<List<Meta>> buscarMeta(@RequestParam Usuario usuario){
-        return ResponseEntity.ok().body(metasService.listarMetaPorUsuario(usuario));
+    @GetMapping("/usuario/{id}")
+    public ResponseEntity<List<Meta>> buscarMeta(@PathVariable Long id){
 
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+
+        return ResponseEntity.ok(
+                metasService.listarMetaPorUsuario(usuario)
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Meta> alterarMeta(@RequestParam Long id,
-                                                   @RequestParam Meta metaNova){
+    public ResponseEntity<Meta> alterarMeta(
+            @PathVariable Long id,
+            @RequestBody Meta metaNova){
 
-        return ResponseEntity.accepted().body(metasService.atualizarMeta(id, metaNova));
+        return ResponseEntity.accepted()
+                .body(metasService.atualizarMeta(id, metaNova));
     }
+
+    @GetMapping("/situacao/{idUsuario}")
+    public ResponseEntity<String> situacaoFinanceira(
+            @PathVariable Long idUsuario){
+
+        return ResponseEntity.ok(
+                metasService.situacaoFinanceiraPorUsuario(idUsuario)
+        );
+    }
+
+    @GetMapping("/previsao/{idUsuario}")
+    public ResponseEntity<String> previsao(@PathVariable Long idUsuario){
+
+        return ResponseEntity.ok(
+                metasService.analisePreditivaPorUsuario(idUsuario)
+        );
+    }
+
+
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/gastos")
@@ -18,9 +19,10 @@ public class GastoController {
 
     private final GastoService gastoService;
 
+
     @PostMapping
-    public Gasto salvarGasto(@RequestBody Gasto gasto){
-        return gastoService.salvarGasto(gasto);
+    public ResponseEntity<Gasto> salvar(@RequestBody Gasto gasto){
+        return ResponseEntity.ok(gastoService.salvarGasto(gasto));
     }
 
     @DeleteMapping("/{id}")
@@ -31,31 +33,39 @@ public class GastoController {
     }
 
     @GetMapping
-    public ResponseEntity<?> bucarGastos(@RequestParam(required = false)LocalDate dataInicio,
-                                         @RequestParam(required = false) LocalDate dataFinal,
-                                         @RequestParam(required = false) String categoria,
-                                         @RequestParam(required = false)BigDecimal valMin,
-                                         @RequestParam(required = false) BigDecimal valMax,
-                                         @RequestParam(required = false)Usuario usuario){
-
+    public ResponseEntity<?> bucarGastos(
+            @RequestParam(required = false) LocalDate dataInicio,
+            @RequestParam(required = false) LocalDate dataFinal,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) BigDecimal valMin,
+            @RequestParam(required = false) BigDecimal valMax,
+            @RequestParam(required = false) Long idUsuario){
 
         if (categoria != null){
-            return ResponseEntity.ok(gastoService.listarPorCategoria(usuario, categoria));
+            return ResponseEntity.ok(gastoService.listarPorCategoria(idUsuario, categoria));
         }
         if (dataInicio != null && dataFinal != null){
-            return ResponseEntity.ok(gastoService.listarPorData(usuario, dataInicio, dataFinal));
+            return ResponseEntity.ok(gastoService.listarPorData(idUsuario, dataInicio, dataFinal));
         }
         if (valMin != null && valMax != null){
-            return ResponseEntity.ok(gastoService.listarPorValor(usuario, valMin, valMax));
+            return ResponseEntity.ok(gastoService.listarPorValor(idUsuario, valMin, valMax));
         }
-        return ResponseEntity.ok(gastoService.listarGastoPorUsuario(usuario));
-        
+
+        return ResponseEntity.ok(gastoService.listarGastoPorUsuario(idUsuario));
     }
 
+    @GetMapping("/usuario/{idUsuario}")
+    public ResponseEntity<List<Gasto>> buscarGastosPorUsuario(
+            @PathVariable Long idUsuario){
+
+        return ResponseEntity.ok(
+                gastoService.listarGastoPorUsuario(idUsuario)
+        );
+    }
     @PutMapping("/{id}")
     public ResponseEntity<Gasto> alterarGasto(@PathVariable Long id,
-                                            @RequestBody Gasto gastoNovo){
+                                              @RequestBody Gasto gastoNovo){
 
-        return ResponseEntity.accepted().body(gastoService.atualizarGastos(id, gastoNovo));
+        return ResponseEntity.ok(gastoService.atualizarGastos(id, gastoNovo));
     }
 }

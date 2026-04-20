@@ -9,7 +9,7 @@ import java.util.List;
 public interface MetasRepository extends JpaRepository<Meta, Long> {
 
 
-    List<Meta>findByUsuarios(Usuario usuario);
+    List<Meta>findByUsuario(Usuario usuario);
 
 
     List<Meta> findByUsuarioAndMes(Usuario usuario, String mes);
