@@ -31,7 +31,7 @@ public class GastoService {
             throw new RuntimeException("Valor inválido");
         }
 
-        gasto.setDataGasto(LocalDate.now()); // 🔥 AQUI A MUDANÇA
+        gasto.setDataGasto(LocalDate.now());
 
         return gastoRepository.save(gasto);
     }
@@ -54,6 +54,7 @@ public class GastoService {
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
             gasto.setUsuario(usuario);
+            gasto.setDataGasto(LocalDate.now());
         }
 
         return gastoRepository.save(gasto);
@@ -82,20 +83,23 @@ public class GastoService {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
     }
 
-    public List<Gasto> listarPorCategoria(Long idUsuario, String categoria){
-        Usuario usuario = buscarUsuario(idUsuario);
-        return gastoRepository.findByUsuarioAndCategoria(usuario, categoria);
-    }
-    public List<Gasto> listarPorData(Long idUsuario, LocalDate dataInicio, LocalDate dataFinal){
-        Usuario usuario = buscarUsuario(idUsuario);
-        return gastoRepository.findByUsuarioAndDataGastoBetween(usuario, dataInicio, dataFinal);
-    }
 
-    public List<Gasto> listarPorValor(Long idUsuario, BigDecimal valorMin, BigDecimal valorMax){
-        Usuario usuario = buscarUsuario(idUsuario);
-        return gastoRepository.findByUsuarioAndValorBetween(usuario, valorMin, valorMax);
-    }
+    public List<Gasto> buscarGastosFiltrados(Long idUsuario, String categoria, LocalDate dataInicio, LocalDate dataFinal, BigDecimal valMin, BigDecimal valMax) {
 
+        // Tratamento de segurança: se a categoria vier como string vazia do JS, vira null
+        if (categoria != null && categoria.isBlank()) {
+            categoria = null;
+        }
+
+        return gastoRepository.buscarComTodosFiltros(
+                idUsuario,
+                categoria,
+                dataInicio,
+                dataFinal,
+                valMin,
+                valMax
+        );
+    }
 }
 
 

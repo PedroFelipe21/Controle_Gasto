@@ -7,10 +7,7 @@ import com.example.controladorgastos.service.UsuarioService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/usuario")
@@ -31,6 +28,17 @@ public class UsuarioController {
 
 
         session.setAttribute("usuarioLogado", user);
+
+        return ResponseEntity.ok(user);
+    }
+    @GetMapping("/me")
+    public ResponseEntity<Usuario> getUsuarioLogado(HttpSession session) {
+
+        Usuario user = (Usuario) session.getAttribute("usuarioLogado");
+
+        if (user == null) {
+            return ResponseEntity.status(401).build(); // não logado
+        }
 
         return ResponseEntity.ok(user);
     }

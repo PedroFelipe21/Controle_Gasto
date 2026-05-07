@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Controlador de Gastos</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #121212;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .card {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 12px;
+      width: 300px;
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background: #4caf50;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .error { color: #ff6b6b; font-size: 14px; }
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #333;
+      padding: 10px;
+      border-radius: 6px;
+      display: none;
+    }
+    .toast.show { display: block; }
+  </style>
+</head>
+
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- LOGIN -->
+<section id="loginScreen" class="screen active">
+  <div class="card">
+    <h2>Login</h2>
+
+    <input type="email" id="loginEmail" placeholder="E-mail">
+    <input type="password" id="loginSenha" placeholder="Senha">
+
+    <div id="loginError" class="error"></div>
+
+    <button onclick="doLogin()">Entrar</button>
+
+    <p>
+      Não tem conta?
+      <a href="#" onclick="showScreen('cadastroScreen')">Criar conta</a>
+    </p>
+  </div>
+</section>
+
+<!-- CADASTRO -->
+<section id="cadastroScreen" class="screen">
+  <div class="card">
+    <h2>Cadastro</h2>
+
+    <input type="text" id="cadastroNome" placeholder="Nome">
+    <input type="email" id="cadastroEmail" placeholder="E-mail">
+    <input type="password" id="cadastroSenha" placeholder="Senha">
+
+    <div id="cadastroError" class="error"></div>
+
+    <button onclick="doCadastro()">Criar conta</button>
+
+    <p>
+      Já tem conta?
+      <a href="#" onclick="showScreen('loginScreen')">Entrar</a>
+    </p>
+  </div>
+</section>
+
+<script src="app.js"></script>
+
+<script>
+  // troca de telas
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // login
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const senha = document.getElementById('loginSenha').value;
+
+    try {
+      const res = await fetch('http://localhost:8080/usuario/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, senha })
+      });
+
+      if (!res.ok) throw new Error();
+
+      // salva usuário
+      const user = await res.json();
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // redireciona
+      window.location.href = "dashboard.html";
+
+    } catch {
+      document.getElementById('loginError').textContent = 'Login inválido';
+    }
+  }
+
+  // cadastro
+  async function doCadastro() {
+    const nome = document.getElementById('cadastroNome').value;
+    const email = document.getElementById('cadastroEmail').value;
+    const senha = document.getElementById('cadastroSenha').value;
+
+    try {
+      await fetch('http://localhost:8080/usuario/cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, senha })
+      });
+
+      alert("Conta criada!");
+      showScreen('loginScreen');
+
+    } catch {
+      document.getElementById('cadastroError').textContent = 'Erro ao cadastrar';
+    }
+  }
+</script>
+
+</body>
+</html>

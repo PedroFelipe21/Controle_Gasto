@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ControladorGastos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+<div class="toast" id="toast"></div>
+
+<!-- DASHBOARD -->
+<div class="screen active" id="dashboard">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo"><span class="dot"></span> ControladorGastos</div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbarUser"></span>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('gastos')">💸 Gastos</button>
+    <button class="tab-btn" onclick="switchTab('metas')">🎯 Metas</button>
+    <button class="tab-btn" onclick="switchTab('analise')">📊 Análise</button>
+  </div>
+
+  <!-- Content -->
+  <div class="dash-content">
+
+    <!--  TABELA: GASTOS  -->
+    <div class="tab-panel active" id="tab-gastos">
+      <!-- Painel de Meses -->
+      <div class="meses-section">
+        <div class="section-header" style="margin-bottom:16px">
+          <div class="section-title">Visão Anual <span id="mesesAno" style="font-weight:400;color:var(--muted);font-size:16px"></span></div>
+          <div style="font-size:12px;color:var(--muted);display:flex;gap:16px;align-items:center">
+            <span><span style="display:inline-block;width:10px;height:10px;background:#2dc653;border-radius:50%;border:1.5px solid #0d0d0d;margin-right:4px"></span>Lucro</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#e63946;border-radius:50%;border:1.5px solid #0d0d0d;margin-right:4px"></span>Prejuízo</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#e0d9cc;border-radius:50%;border:1.5px solid #0d0d0d;margin-right:4px"></span>Sem dados</span>
+          </div>
+        </div>
+        <div class="meses-grid" id="mesesGrid"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="gastosStats">
+        <div class="stat-card">
+          <div class="stat-label">Total de Gastos</div>
+          <div class="stat-value" id="statTotal">R$ –</div>
+          <div class="stat-sub">neste mês</div>
+        </div>
+      </div>
+
+      <!-- Novo Gasto -->
+      <div class="form-card">
+        <h3>＋ Novo Gasto</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Descrição</label>
+            <input type="text" id="gDescricao" placeholder="Ex: Mercado">
+          </div>
+          <div class="form-group">
+            <label>Valor (R$)</label>
+            <input type="number" id="gValor" placeholder="0,00" step="0.01" min="0.01">
+          </div>
+          <div class="form-group">
+            <label>Categoria</label>
+            <select id="gCategoria">
+              <option value="">Selecione...</option>
+              <option>Alimentação</option>
+              <option>Transporte</option>
+              <option>Saúde</option>
+              <option>Lazer</option>
+              <option>Educação</option>
+              <option>Casa</option>
+              <option>Vestuário</option>
+              <option>Outros</option>
+            </select>
+          </div>
+        </div>
+        <br>
+        <button class="btn btn-primary" style="max-width:200px" onclick="salvarGasto()">Salvar Gasto</button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filter-bar">
+        <div class="form-group">
+          <label>Filtrar por categoria</label>
+          <select id="filtroCategoria" onchange="aplicarFiltro()">
+            <option value="">Todas</option>
+            <option>Alimentação</option>
+            <option>Transporte</option>
+            <option>Saúde</option>
+            <option>Lazer</option>
+            <option>Educação</option>
+            <option>Casa</option>
+            <option>Vestuário</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data início</label>
+          <input type="date" id="filtroDataInicio">
+        </div>
+        <div class="form-group">
+          <label>Data fim</label>
+          <input type="date" id="filtroDataFim">
+        </div>
+        <div class="form-group">
+          <label>Val. mín</label>
+          <input type="number" id="filtroValMin" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Val. máx</label>
+          <input type="number" id="filtroValMax" placeholder="9999">
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="aplicarFiltro()">Filtrar</button>
+        <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">Limpar</button>
+      </div>
+
+      <!-- Tabela -->
+      <div class="section-header">
+        <div class="section-title">Seus Gastos</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Valor</th>
+              <th>Data</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="gastosTabela">
+            <tr><td colspan="5"><div class="empty"><div class="icon">📭</div>Nenhum gasto encontrado.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: METAS -->
+    <div class="tab-panel" id="tab-metas">
+      <div class="form-card">
+        <h3>＋ Nova Meta Mensal</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mês</label>
+            <input type="text" id="mMes" placeholder="Ex: Maio/2026">
+          </div>
+          <div class="form-group">
+            <label>Renda Mensal (R$)</label>
+            <input type="number" id="mRenda" placeholder="0,00" step="0.01" min="0.01">
+          </div>
+          <div class="form-group">
+            <label>Meta de Gastos (R$)</label>
+            <input type="number" id="mValor" placeholder="0,00" step="0.01" min="0.01">
+          </div>
+        </div>
+        <br>
+        <button class="btn btn-primary" style="max-width:200px" onclick="salvarMeta()">Salvar Meta</button>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Suas Metas</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th>Renda Mensal</th>
+              <th>Meta de Gastos</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="metasTabela">
+            <tr><td colspan="4"><div class="empty"><div class="icon">🎯</div>Nenhuma meta cadastrada.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: ANÁLISE -->
+    <div class="tab-panel" id="tab-analise">
+      <div class="section-header">
+        <div class="section-title">Painel de Análise</div>
+        <button class="btn btn-secondary btn-sm" onclick="carregarAnalise()">Atualizar</button>
+      </div>
+
+      <div id="situacaoBox" class="insight-box" style="display:none">
+        <div class="insight-label">Situação Financeira</div>
+        <div class="insight-text" id="situacaoText"></div>
+      </div>
+
+      <div id="previsaoBox" class="insight-box" style="background:#1a3a2a; display:none">
+        <div class="insight-label">Previsão de Gastos</div>
+        <div class="insight-text" id="previsaoText"></div>
+      </div>
+
+      <div id="analyseEmpty" class="empty">
+        <div class="icon">📊</div>
+        Clique em <strong>Atualizar</strong> para carregar sua análise financeira.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- EDITAR GASTO -->
+<div class="modal-overlay" id="editGastoModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('editGastoModal')">✕</button>
+    <h3>Editar Gasto</h3>
+    <input type="hidden" id="editGastoId">
+    <div class="form-group">
+      <label>Descrição</label>
+      <input type="text" id="editGDescricao" placeholder="Descrição">
+    </div>
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="editGValor" step="0.01" min="0.01">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="editGCategoria">
+        <option value="">Selecione...</option>
+        <option>Alimentação</option><option>Transporte</option>
+        <option>Saúde</option><option>Lazer</option>
+        <option>Educação</option><option>Casa</option>
+        <option>Vestuário</option><option>Outros</option>
+      </select>
+    </div>
+    <br>
+    <button class="btn btn-primary" onclick="confirmarEdicaoGasto()">Salvar alterações</button>
+  </div>
+</div>
+
+<!-- EDITAR META -->
+<div class="modal-overlay" id="editMetaModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('editMetaModal')">✕</button>
+    <h3>Editar Meta</h3>
+    <input type="hidden" id="editMetaId">
+    <div class="form-group">
+      <label>Mês</label>
+      <input type="text" id="editMMes">
+    </div>
+    <div class="form-group">
+      <label>Renda Mensal (R$)</label>
+      <input type="number" id="editMRenda" step="0.01" min="0.01">
+    </div>
+    <div class="form-group">
+      <label>Meta de Gastos (R$)</label>
+      <input type="number" id="editMValor" step="0.01" min="0.01">
+    </div>
+    <br>
+    <button class="btn btn-primary" onclick="confirmarEdicaoMeta()">Salvar alterações</button>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

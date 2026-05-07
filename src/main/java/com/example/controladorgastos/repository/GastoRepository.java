@@ -15,18 +15,17 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
 
     List<Gasto> findByUsuario(Usuario usuario);
 
+    @Query("SELECT g FROM Gasto g WHERE g.usuario.id = :idUsuario " +
+            "AND (:categoria IS NULL OR g.categoria = :categoria) " +
+            "AND (:dataInicio IS NULL OR g.dataGasto >= :dataInicio) " +
+            "AND (:dataFinal IS NULL OR g.dataGasto <= :dataFinal) " +
+            "AND (:valMin IS NULL OR g.valor >= :valMin) " +
+            "AND (:valMax IS NULL OR g.valor <= :valMax)")
+    List<Gasto> buscarComTodosFiltros(Long idUsuario, String categoria, LocalDate dataInicio, LocalDate dataFinal, BigDecimal valMin, BigDecimal valMax);
+
+
     @Query("SELECT COALESCE(SUM(g.valor),0) FROM Gasto g WHERE g.usuario = :usuario")
     BigDecimal sumByUsuario(@Param("usuario") Usuario usuario);
-    //FILTROS ESPECIFICOS
 
-
-    List<Gasto> findByUsuarioAndCategoria(Usuario usuario, String categoria);
-
-    List<Gasto> findByUsuarioAndDataGastoBetween(Usuario usuario, LocalDate dataInicio, LocalDate dataFim);
-
-    List<Gasto> findByUsuarioAndValorBetween(Usuario usuario, BigDecimal valorMin, BigDecimal valorMax);
-
-    //Containig usado para ampliar a forma de busca
-    List<Gasto>findByUsuarioAndDescricaoContaining(Usuario usuario, String descricao);
 
 }

@@ -30,8 +30,7 @@ public class Meta {
     @Column(name = "idMeta")
     private Long id;
 
-    private BigDecimal valor; //valor da meta que deseja atingir
-
+    private BigDecimal valor;
     private BigDecimal rendaMensal;
 
     private String mes;

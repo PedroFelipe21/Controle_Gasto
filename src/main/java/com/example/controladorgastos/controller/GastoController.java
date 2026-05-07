@@ -33,25 +33,16 @@ public class GastoController {
     }
 
     @GetMapping
-    public ResponseEntity<?> bucarGastos(
+    public ResponseEntity<List<Gasto>> buscarGastos(
             @RequestParam(required = false) LocalDate dataInicio,
             @RequestParam(required = false) LocalDate dataFinal,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) BigDecimal valMin,
             @RequestParam(required = false) BigDecimal valMax,
-            @RequestParam(required = false) Long idUsuario){
+            @RequestParam Long idUsuario) {
 
-        if (categoria != null){
-            return ResponseEntity.ok(gastoService.listarPorCategoria(idUsuario, categoria));
-        }
-        if (dataInicio != null && dataFinal != null){
-            return ResponseEntity.ok(gastoService.listarPorData(idUsuario, dataInicio, dataFinal));
-        }
-        if (valMin != null && valMax != null){
-            return ResponseEntity.ok(gastoService.listarPorValor(idUsuario, valMin, valMax));
-        }
-
-        return ResponseEntity.ok(gastoService.listarGastoPorUsuario(idUsuario));
+        // Agora ele não escolhe um IF, ele manda tudo de uma vez
+        return ResponseEntity.ok(gastoService.buscarGastosFiltrados(idUsuario, categoria, dataInicio, dataFinal, valMin, valMax));
     }
 
     @GetMapping("/usuario/{idUsuario}")

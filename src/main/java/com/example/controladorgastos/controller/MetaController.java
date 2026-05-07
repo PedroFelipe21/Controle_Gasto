@@ -9,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/metas")
@@ -51,21 +53,21 @@ public class MetaController {
                 .body(metasService.atualizarMeta(id, metaNova));
     }
 
-    @GetMapping("/situacao/{idUsuario}")
-    public ResponseEntity<String> situacaoFinanceira(
-            @PathVariable Long idUsuario){
+    @GetMapping("/analise-completa/{idUsuario}")
+    public ResponseEntity<Map<String, Object>> getAnaliseCompleta(@PathVariable Long idUsuario) {
+        Map<String, Object> response = new HashMap<>();
 
-        return ResponseEntity.ok(
-                metasService.situacaoFinanceiraPorUsuario(idUsuario)
-        );
-    }
+        String situacao = metasService.situacaoFinanceiraPorUsuario(idUsuario);
+        String previsao = metasService.analisePreditivaPorUsuario(idUsuario);
 
-    @GetMapping("/previsao/{idUsuario}")
-    public ResponseEntity<String> previsao(@PathVariable Long idUsuario){
+        // Lógica simples: se a frase contém "prejuízo", o status é negativo
+        boolean temLucro = !situacao.contains("prejuízo");
 
-        return ResponseEntity.ok(
-                metasService.analisePreditivaPorUsuario(idUsuario)
-        );
+        response.put("situacao", situacao);
+        response.put("previsao", previsao);
+        response.put("temLucro", temLucro); // Enviamos isso para o JS
+
+        return ResponseEntity.ok(response);
     }
 
 
