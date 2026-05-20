@@ -41,7 +41,6 @@ public class GastoController {
             @RequestParam(required = false) BigDecimal valMax,
             @RequestParam Long idUsuario) {
 
-        // Agora ele não escolhe um IF, ele manda tudo de uma vez
         return ResponseEntity.ok(gastoService.buscarGastosFiltrados(idUsuario, categoria, dataInicio, dataFinal, valMin, valMax));
     }
 

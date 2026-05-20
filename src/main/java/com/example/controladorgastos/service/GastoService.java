@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -26,14 +27,39 @@ public class GastoService {
         if (gasto.getUsuario() == null) {
             throw new RuntimeException("Usuário obrigatório");
         }
-
         if (gasto.getValor() == null || gasto.getValor().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Valor inválido");
         }
+        if(gasto.getFormaPagamento().equals("credito") && gasto.getTotalParcelas() > 1){
+          BigDecimal qtdParcelas = BigDecimal.valueOf(gasto.getTotalParcelas());
+          BigDecimal valorParcelaCalculado = gasto.getValor().divide(qtdParcelas, 2, RoundingMode.HALF_UP);
 
-        gasto.setDataGasto(LocalDate.now());
+          for (int i = 1; i <=gasto.getTotalParcelas(); i++){
+              Gasto gastoParcela = new Gasto();
 
-        return gastoRepository.save(gasto);
+              gastoParcela.setDescricao(gasto.getDescricao());
+              gastoParcela.setCategoria(gasto.getCategoria());
+              gastoParcela.setValor(gasto.getValor());
+              gastoParcela.setUsuario(gasto.getUsuario());
+              gastoParcela.setFormaPagamento(gasto.getFormaPagamento());
+              gastoParcela.setTotalParcelas(gasto.getTotalParcelas());
+
+              // dados  parcela
+              gastoParcela.setParcelaAtual(i);
+              gastoParcela.setValorParcela(valorParcelaCalculado);
+              gastoParcela.setDataGasto(gasto.getDataGasto().plusMonths(i - 1));
+
+              gastoRepository.save(gastoParcela);
+          }
+
+            gasto.setValorParcela(valorParcelaCalculado);
+          gasto.setParcelaAtual(1);
+            gasto.setTotalParcelas(1);
+            return gasto;
+        }else {
+
+            return gastoRepository.save(gasto);
+        }
     }
 
 
@@ -47,6 +73,9 @@ public class GastoService {
         gasto.setCategoria(gastoNovo.getCategoria());
         gasto.setDataGasto(gastoNovo.getDataGasto());
         gasto.setValor(gastoNovo.getValor());
+        gasto.setFormaPagamento(gastoNovo.getFormaPagamento());
+        gasto.setTotalParcelas(gastoNovo.getTotalParcelas());
+
 
         // GARANTIR que usuário não seja perdido na atualização
         if (gastoNovo.getUsuario() != null && gastoNovo.getUsuario().getId() != null) {
@@ -54,7 +83,7 @@ public class GastoService {
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
             gasto.setUsuario(usuario);
-            gasto.setDataGasto(LocalDate.now());
+
         }
 
         return gastoRepository.save(gasto);

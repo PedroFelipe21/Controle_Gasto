@@ -63,9 +63,13 @@ function hideError(id) {
   document.getElementById(id).classList.remove('show');
 }
 
-// Controle simples de modal
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+// Controle  modal
+function openModal(id)  {
+document.getElementById(id).classList.add('open');
+ }
+function closeModal(id) {
+ document.getElementById(id).classList.remove('open');
+ }
 
 
 // Centraliza todas as requisições HTTP para o backend
@@ -224,37 +228,74 @@ function switchTab(tab) {
 //
 //  PAINEL VISUAL DE MESES
 //
-
-const NOMES_MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-
-// Gera resumo mensal de gastos
+const NOMES_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 async function renderMeses() {
   const grid = document.getElementById('mesesGrid');
   grid.innerHTML = '';
 
-  let gastos = [];
+  const ano      = new Date().getFullYear();
+  const mesAtual = new Date().getMonth();
 
+  document.getElementById('mesesAno').textContent = ano;
+
+  let gastos = [], metas = [];
   try {
     gastos = await apiFetch(`/gastos?idUsuario=${currentUser.id}`) || [];
+    metas  = await apiFetch(`/metas/usuario/${currentUser.id}`)    || [];
   } catch {}
 
   NOMES_MESES.forEach((nome, idx) => {
-    const total = gastos
-      .filter(g => new Date(g.dataGasto).getMonth() === idx)
-      .reduce((s, g) => s + parseFloat(g.valor || 0), 0);
+    const isFuturo = idx > mesAtual;
+    const isAtual  = idx === mesAtual;
+
+    const gastosDoMes = gastos.filter(g => {
+      if (!g.dataGasto) return false;
+      const d = new Date(g.dataGasto + 'T00:00:00');
+      return d.getFullYear() === ano && d.getMonth() === idx;
+    });
+    const totalGastos = gastosDoMes.reduce((s, g) => s + parseFloat(g.valor || 0), 0);
+
+    const metaDoMes = metas.find(m =>
+      m.mes && m.mes.toLowerCase().includes(nome.toLowerCase())
+    );
+
+    let classe = '', valorLabel = '–';
+
+    if (!isFuturo && metaDoMes && gastosDoMes.length > 0) {
+      const limiteMeta = parseFloat(metaDoMes.valor || 0)
+      const saldo = limiteMeta - totalGastos;
+      if      (saldo > 0) {
+      classe = 'lucro';
+       valorLabel = '+ ' + formatBRL(saldo);
+      }
+      else {
+      classe = 'prejuizo';
+      valorLabel = '- ' + formatBRL(Math.abs(saldo));
+       }
+    } else if (!isFuturo && gastosDoMes.length > 0) {
+      valorLabel = formatBRL(totalGastos);
+    }
 
     const card = document.createElement('div');
-    card.className = 'mes-card';
+    card.className = [
+      'mes-card',
+      classe,
+      isAtual  ? 'atual'  : '',
+      isFuturo ? 'futuro' : ''
+    ].filter(Boolean).join(' ');
 
     card.innerHTML = `
-      <div>${nome}</div>
-      <div>${formatBRL(total)}</div>
+      <div class="mes-nome">${nome}</div>
+      <div class="mes-valor">${valorLabel}</div>
     `;
+
+    if (!isFuturo && gastosDoMes.length > 0) {
+      card.title = `${nome}: ${gastosDoMes.length} gasto(s) · Total ${formatBRL(totalGastos)}`;
+    }
 
     grid.appendChild(card);
   });
 }
-
 
 
 //  GASTOS (CRUD)
@@ -263,7 +304,10 @@ async function renderMeses() {
 async function salvarGasto() {
   const descricao = document.getElementById('gDescricao').value;
   const valor = parseFloat(document.getElementById('gValor').value);
+  const dataGasto = document.getElementById('gData').value;
   const categoria = document.getElementById('gCategoria').value;
+  const formaPagamento = document.getElementById('gFormaPagamento').value;
+  const totalParcelas = parseInt(document.getElementById('gTotalParcelas').value);
 
   if (!valor || valor <= 0) {
     toast('Valor inválido', true);
@@ -276,7 +320,10 @@ async function salvarGasto() {
       body: JSON.stringify({
         descricao,
         valor,
+        dataGasto,
         categoria,
+        formaPagamento,
+        totalParcelas,
         usuario: { id: currentUser.id }
       })
     });
@@ -289,11 +336,25 @@ async function salvarGasto() {
     toast('Erro ao salvar', true);
   }
 }
+//controlar parcelas de gastos
+function controlarCamposParcela() {
+    const formaPagamento = document.getElementById("gFormaPagamento").value;
+    const grupoParcelas = document.getElementById("grupoParcelas");
+    const inputTotalParcelas = document.getElementById("gTotalParcelas");
+
+    if (formaPagamento === "credito") {
+        grupoParcelas.style.display = "block"; // Mostra o campo
+    } else {
+        grupoParcelas.style.display = "none";  // Esconde o campo
+        inputTotalParcelas.value = 1;          // Reseta para 1 se mudar de ideia
+    }
+}
 //editar
-function abrirEdicaoGasto(id, descricao, valor, categoria) {
+function abrirEdicaoGasto(id, descricao, valor,dataGasto, categoria) {
   document.getElementById('editGastoId').value = id;
   document.getElementById('editGDescricao').value = descricao;
   document.getElementById('editGValor').value = valor;
+  document.getElementById('editGData').value = dataGasto;
   document.getElementById('editGCategoria').value = categoria;
 
   openModal('editGastoModal');
@@ -304,7 +365,10 @@ async function confirmarEdicaoGasto() {
   const id = document.getElementById('editGastoId').value;
   const descricao = document.getElementById('editGDescricao').value;
   const valor = parseFloat(document.getElementById('editGValor').value);
+  const dataGasto = document.getElementById("editGData").value;
   const categoria = document.getElementById('editGCategoria').value;
+  const formaPagamento = document.getElementById('editGFormaPagamento').value;
+  const totalParcelas = parseInt(document.getElementById('gTotalParcelas').value);
 
   if (!valor || valor <= 0) {
     toast('Valor inválido', true);
@@ -317,7 +381,10 @@ async function confirmarEdicaoGasto() {
       body: JSON.stringify({
         descricao,
         valor,
+        dataGasto,
         categoria,
+        formaPagamento,
+        totalParcelas,
         usuario: { id: currentUser.id }
       })
     });
@@ -331,7 +398,30 @@ async function confirmarEdicaoGasto() {
     toast('Erro ao editar', true);
   }
 }
+// card de gasto total
 
+function atualizarStatsGeral(gastos) {
+  const statTotal = document.getElementById('statTotal');
+  if (!statTotal) return;
+
+  const anoAtual = new Date().getFullYear();
+  const mesAtual = new Date().getMonth();
+
+  // Filtra para somar apenas o que pertence ao mês e ano vigentes
+  const totalMesAtual = gastos.reduce((soma, g) => {
+    if (!g.dataGasto) return soma;
+
+
+    const d = new Date(g.dataGasto + 'T00:00:00');
+
+    if (d.getFullYear() === anoAtual && d.getMonth() === mesAtual) {
+      return soma + parseFloat(g.valor || 0);
+    }
+    return soma;
+  }, 0);
+
+  statTotal.textContent = formatBRL(totalMesAtual);
+}
 // Busca gastos do backend
 async function carregarGastos(query = "") {
   try {
@@ -342,10 +432,9 @@ async function carregarGastos(query = "") {
 
     renderGastos(gastos || []);
 
-    // Se a sua função de meses precisar do saldo, certifique-se de passar o valor correto
+
     if (typeof renderizarGridMeses === 'function') {
 
-        // pode apenas chamar a renderização básica aqui
         renderizarGridMeses();
     } else if (typeof renderMeses === 'function') {
         renderMeses();
@@ -384,6 +473,8 @@ function limparFiltros() {
 }
 // Mostra gastos na tabela
 function renderGastos(gastos) {
+  atualizarStatsGeral(gastos);
+
   const tbody = document.getElementById('gastosTabela');
 
   if (!gastos.length) {
@@ -396,13 +487,18 @@ function renderGastos(gastos) {
       <td>${g.descricao}</td>
       <td>${g.categoria}</td>
       <td>${formatBRL(g.valor)}</td>
+        <td>${formatBRL(g.valorParcela)}</td>
       <td>${formatDate(g.dataGasto)}</td>
+      <td>${g.formaPagamento}</td>
+      <td>${g.totalParcelas}</td>
+      <td>${g.parcelaAtual}</td>
       <td>
 
       <button onclick="abrirEdicaoGasto(
                 ${g.id},
                 '${(g.descricao || '').replace(/'/g, "\\'")}',
                 ${g.valor},
+                '${g.dataGasto}',
                 '${(g.categoria || '').replace(/'/g, "\\'")}'
               )">
                 Editar

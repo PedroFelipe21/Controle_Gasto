@@ -70,6 +70,10 @@
             <input type="number" id="gValor" placeholder="0,00" step="0.01" min="0.01">
           </div>
           <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="gData">
+          </div>
+          <div class="form-group">
             <label>Categoria</label>
             <select id="gCategoria">
               <option value="">Selecione...</option>
@@ -82,6 +86,21 @@
               <option>Vestuário</option>
               <option>Outros</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Forma de Pagamento</label>
+            <select id="gFormaPagamento" onchange="controlarCamposParcela()">
+              <option value="">Selecione...</option>
+              <option value="pix">PIX</option>
+              <option value="debito">Débito</option>
+              <option value="credito">Crédito</option>
+            </select>
+          </div>
+
+          <!-- 🆕 Novo Campo: Parcelas (Inicia escondido com display: none) -->
+          <div class="form-group" id="grupoParcelas" style="display: none;">
+            <label>Nº de Parcelas</label>
+            <input type="number" id="gTotalParcelas" min="1" value="1" placeholder="Ex: 3">
           </div>
         </div>
         <br>
@@ -135,7 +154,11 @@
               <th>Descrição</th>
               <th>Categoria</th>
               <th>Valor</th>
+              <th>Valor da parcela</th>
               <th>Data</th>
+              <th>Forma Pagamento</th>
+              <th>Total parcelas</th>
+              <th>Parcela Atual</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -229,6 +252,10 @@
       <input type="number" id="editGValor" step="0.01" min="0.01">
     </div>
     <div class="form-group">
+      <label>data</label>
+      <input type="date" id="editGData">
+    </div>
+    <div class="form-group">
       <label>Categoria</label>
       <select id="editGCategoria">
         <option value="">Selecione...</option>
@@ -237,6 +264,18 @@
         <option>Educação</option><option>Casa</option>
         <option>Vestuário</option><option>Outros</option>
       </select>
+    </div>
+    <div class="form-group">
+      <label>Forma de pagamento</label>
+      <select id="editGFormaPagamento">
+        <option>Pix</option>
+        <option>Debito</option>
+        <option>Credito</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Numero de Parcelas</label>
+      <input type="number" id="editGTotalParcelas" min="1" value="1" placeholder="Ex: 3">
     </div>
     <br>
     <button class="btn btn-primary" onclick="confirmarEdicaoGasto()">Salvar alterações</button>

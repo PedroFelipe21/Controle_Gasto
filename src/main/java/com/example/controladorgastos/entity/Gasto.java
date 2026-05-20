@@ -2,6 +2,7 @@ package com.example.controladorgastos.entity;
 
 
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,6 +43,17 @@ public class Gasto {
 
     @Column(name = "categoria")
     private String categoria;
+
+    @Column(name = "formaPagamento")
+    private String formaPagamento;
+
+    @Column(name = "totalParcelas")
+    private Integer totalParcelas;
+
+    @Column(name = "parcelaAtual")
+    private Integer parcelaAtual;
+    @Column(name = "valorParcela")
+    private  BigDecimal valorParcela;
 }
 
 
