@@ -350,17 +350,18 @@ function controlarCamposParcela() {
     }
 }
 //editar
-function abrirEdicaoGasto(id, descricao, valor,dataGasto, categoria) {
+function abrirEdicaoGasto(id, descricao, valor,dataGasto, categoria, formaPagamento, totalParcelas) {
   document.getElementById('editGastoId').value = id;
   document.getElementById('editGDescricao').value = descricao;
   document.getElementById('editGValor').value = valor;
   document.getElementById('editGData').value = dataGasto;
   document.getElementById('editGCategoria').value = categoria;
+  document.getElementById('editGFormaPagamento').value = formaPagamento;
+  document.getElementById('editGTotalParcelas').value = totalParcelas;
+
 
   openModal('editGastoModal');
 }
-
-//editar gastos
 async function confirmarEdicaoGasto() {
   const id = document.getElementById('editGastoId').value;
   const descricao = document.getElementById('editGDescricao').value;
@@ -368,10 +369,15 @@ async function confirmarEdicaoGasto() {
   const dataGasto = document.getElementById("editGData").value;
   const categoria = document.getElementById('editGCategoria').value;
   const formaPagamento = document.getElementById('editGFormaPagamento').value;
-  const totalParcelas = parseInt(document.getElementById('gTotalParcelas').value);
+  const totalParcelas = parseInt(document.getElementById('editGTotalParcelas').value) || 1;
 
   if (!valor || valor <= 0) {
     toast('Valor inválido', true);
+    return;
+  }
+
+  if (!dataGasto) {
+    toast('Data obrigatória', true);
     return;
   }
 
@@ -395,7 +401,7 @@ async function confirmarEdicaoGasto() {
 
   } catch (e) {
     console.log(e);
-    toast('Erro ao editar', true);
+    toast('Erro ao editar: ' + e.message, true);
   }
 }
 // card de gasto total
@@ -487,7 +493,7 @@ function renderGastos(gastos) {
       <td>${g.descricao}</td>
       <td>${g.categoria}</td>
       <td>${formatBRL(g.valor)}</td>
-        <td>${formatBRL(g.valorParcela)}</td>
+      <td>${formatBRL(g.valorParcela)}</td>
       <td>${formatDate(g.dataGasto)}</td>
       <td>${g.formaPagamento}</td>
       <td>${g.totalParcelas}</td>

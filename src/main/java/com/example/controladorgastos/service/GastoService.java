@@ -64,32 +64,72 @@ public class GastoService {
 
 
     @Transactional
-    public Gasto atualizarGastos(Long id, Gasto gastoNovo){
+    public Gasto atualizarGastos(Long id, Gasto gastoNovo) {
 
         Gasto gasto = gastoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Gasto não encontrado"));
-
         gasto.setDescricao(gastoNovo.getDescricao());
         gasto.setCategoria(gastoNovo.getCategoria());
         gasto.setDataGasto(gastoNovo.getDataGasto());
-        gasto.setValor(gastoNovo.getValor());
         gasto.setFormaPagamento(gastoNovo.getFormaPagamento());
         gasto.setTotalParcelas(gastoNovo.getTotalParcelas());
+        gasto.setValor(gastoNovo.getValor());
 
-
-        // GARANTIR que usuário não seja perdido na atualização
         if (gastoNovo.getUsuario() != null && gastoNovo.getUsuario().getId() != null) {
             Usuario usuario = usuarioRepository.findById(gastoNovo.getUsuario().getId())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
             gasto.setUsuario(usuario);
+        }
+        // Se era parcelado antes, deleta as parcelas antigas
+        if (gasto.getFormaPagamento() != null &&
+                gasto.getFormaPagamento().equalsIgnoreCase("credito") &&
+                gasto.getParcelaAtual() != null &&
+                gasto.getParcelaAtual() > 1) {
 
+            gastoRepository.deleteById(id);
+        }
+
+        //  lógica de parcelas
+        if (gastoNovo.getFormaPagamento().equalsIgnoreCase("credito") &&
+                gastoNovo.getTotalParcelas() != null &&
+                gastoNovo.getTotalParcelas() > 1) {
+
+            BigDecimal qtdParcelas = BigDecimal.valueOf(gastoNovo.getTotalParcelas());
+            BigDecimal valorParcelaCalculado = gastoNovo.getValor()
+                    .divide(qtdParcelas, 2, RoundingMode.HALF_UP);
+
+            for (int i = 1; i <= gastoNovo.getTotalParcelas(); i++) {
+                Gasto gastoParcela = new Gasto();
+
+                gastoParcela.setDescricao(gastoNovo.getDescricao());
+                gastoParcela.setCategoria(gastoNovo.getCategoria());
+                gastoParcela.setValor(gastoNovo.getValor());
+                gastoParcela.setUsuario(gastoNovo.getUsuario());
+                gastoParcela.setFormaPagamento(gastoNovo.getFormaPagamento());
+                gastoParcela.setTotalParcelas(gastoNovo.getTotalParcelas());
+
+                // Dados da parcela
+                gastoParcela.setParcelaAtual(i);
+                gastoParcela.setValorParcela(valorParcelaCalculado);
+                gastoParcela.setDataGasto(gastoNovo.getDataGasto().plusMonths(i - 1));
+
+                gastoRepository.save(gastoParcela);
+            }
+
+            // Atualiza o gasto principal como primeira parcela
+            gasto.setValorParcela(valorParcelaCalculado);
+            gasto.setParcelaAtual(1);
+            gasto.setTotalParcelas(gastoNovo.getTotalParcelas());
+
+        } else {
+
+            // Se não for parcelado, limpa os campos
+            gasto.setParcelaAtual(1);
+            gasto.setValorParcela(null);
         }
 
         return gastoRepository.save(gasto);
     }
-
-
     @Transactional
     public void deletar(@PathVariable Long id){
 
