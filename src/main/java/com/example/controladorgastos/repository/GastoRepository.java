@@ -27,5 +27,7 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
     @Query("SELECT COALESCE(SUM(g.valor),0) FROM Gasto g WHERE g.usuario = :usuario")
     BigDecimal sumByUsuario(@Param("usuario") Usuario usuario);
 
+    List<Gasto> findByGrupoParcelamento(String grupoParcelamento);
 
+    void deleteByGrupoParcelamento(String grupoParcelamento);
 }

@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,21 +51,17 @@ public class MetaController {
                 .body(metasService.atualizarMeta(id, metaNova));
     }
 
-    @GetMapping("/analise-completa/{idUsuario}")
-    public ResponseEntity<Map<String, Object>> getAnaliseCompleta(@PathVariable Long idUsuario) {
-        Map<String, Object> response = new HashMap<>();
+    @GetMapping("/analise/{idUsuario}")
+    public ResponseEntity<Map<String, Object>> analise(
+            @PathVariable Long idUsuario,
+            @RequestParam(required = false) String mes) {
 
-        String situacao = metasService.situacaoFinanceiraPorUsuario(idUsuario);
-        String previsao = metasService.analisePreditivaPorUsuario(idUsuario);
-
-        // Lógica simples: se a frase contém "prejuízo", o status é negativo
-        boolean temLucro = !situacao.contains("prejuízo");
-
-        response.put("situacao", situacao);
-        response.put("previsao", previsao);
-        response.put("temLucro", temLucro); // Enviamos isso para o JS
-
-        return ResponseEntity.ok(response);
+        try {
+            return ResponseEntity.ok(metasService.analisePreditivaCompleta(idUsuario));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("erro", e.getMessage()));
+        }
     }
 
 

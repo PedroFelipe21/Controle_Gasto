@@ -225,10 +225,8 @@ function switchTab(tab) {
 }
 
 
-//
-//  PAINEL VISUAL DE MESES
-//
 const NOMES_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
 async function renderMeses() {
   const grid = document.getElementById('mesesGrid');
   grid.innerHTML = '';
@@ -255,9 +253,20 @@ async function renderMeses() {
     });
     const totalGastos = gastosDoMes.reduce((s, g) => s + parseFloat(g.valor || 0), 0);
 
-    const metaDoMes = metas.find(m =>
-      m.mes && m.mes.toLowerCase().includes(nome.toLowerCase())
-    );
+    // ← CONVERTE "2026-06" PARA COMPARAR COM idx (0-11)
+    const metaDoMes = metas.find(m => {
+      if (!m.mes) return false;
+
+      // Se formato é "2026-06", extrai o mês (06) e compara
+      if (m.mes.includes('-')) {
+        const mesParte = m.mes.split('-')[1];  // "06"
+        const mesNumero = parseInt(mesParte) - 1;  // 6 - 1 = 5 (junho)
+        return mesNumero === idx;  // idx = 5 para junho
+      }
+
+      // Se ainda estiver no formato antigo "junho/2026"
+      return m.mes.toLowerCase().includes(nome.toLowerCase());
+    });
 
     let classe = '', valorLabel = '–';
 
@@ -265,13 +274,13 @@ async function renderMeses() {
       const limiteMeta = parseFloat(metaDoMes.valor || 0)
       const saldo = limiteMeta - totalGastos;
       if      (saldo > 0) {
-      classe = 'lucro';
-       valorLabel = '+ ' + formatBRL(saldo);
+        classe = 'lucro';
+        valorLabel = '+ ' + formatBRL(saldo);
       }
       else {
-      classe = 'prejuizo';
-      valorLabel = '- ' + formatBRL(Math.abs(saldo));
-       }
+        classe = 'prejuizo';
+        valorLabel = '- ' + formatBRL(Math.abs(saldo));
+      }
     } else if (!isFuturo && gastosDoMes.length > 0) {
       valorLabel = formatBRL(totalGastos);
     }
@@ -602,7 +611,7 @@ async function confirmarEdicaoMeta() {
     closeModal('editMetaModal');
     toast('Meta atualizada!');
     carregarMetas();
-
+    carregarAnalise();
   } catch (e) {
     console.log(e);
     toast('Erro ao editar meta', true);
@@ -674,32 +683,156 @@ async function carregarMetas() {
 }
 
 //----------------------------//
+let chartInstance = null;
+
 async function carregarAnalise() {
+  document.getElementById('situacaoBox').style.display = 'none';
+  document.getElementById('previsaoBox').style.display = 'none';
+  document.getElementById('graficoBox').style.display = 'none';
+  document.getElementById('analyseEmpty').style.display = 'none';
+
   try {
-    // Faz uma única chamada para o novo endpoint
-    const res = await apiFetch(`/metas/analise-completa/${currentUser.id}`);
 
-    // Referências do HTML
-    const situacaoText = document.getElementById('situacaoText');
-    const previsaoText = document.getElementById('previsaoText');
-    const situacaoBox = document.getElementById('situacaoBox');
-    const previsaoBox = document.getElementById('previsaoBox');
-    const analyseEmpty = document.getElementById('analyseEmpty');
+    const res = await apiFetch(`/metas/analise/${currentUser.id}`);
 
-    // Preenche os textos com as chaves do Map retornado pelo Java
-    situacaoText.innerText = res.situacao;
-    previsaoText.innerText = res.previsao;
+    if (res.erro) {
+      document.getElementById('analyseEmpty').style.display = 'block';
+      document.getElementById('analyseEmpty').innerHTML = '<div class="icon">⚠️</div>' + res.erro;
+      return;
+    }
 
-    // Controla a visibilidade
-    situacaoBox.style.display = 'block';
-    previsaoBox.style.display = 'block';
-    analyseEmpty.style.display = 'none';
+    // Se veio com gráfico (regressão)
+    if (res.previsoes && res.previsoes.length > 0) {
+      renderGraficoRegressao(res);
+      return;
+    }
+
 
   } catch (e) {
-    console.error("Erro na integração:", e);
-    toast('Erro ao carregar análise financeira', true);
+    console.error("Erro na análise:", e);
+    document.getElementById('analyseEmpty').style.display = 'block';
+    document.getElementById('analyseEmpty').innerHTML = '<div class="icon">❌</div>Erro ao carregar análise financeira';
   }
 }
+
+
+
+// Renderiza gráfico de regressão linear
+function renderGraficoRegressao(data) {
+   const meses = data.meses;
+    const valoresHistoricos = data.valoresHistoricos.map(v => parseFloat(v));
+    const previsoes = data.previsoes;
+
+
+    const metaMedia = (data.metas && data.metas.length > 0)
+      ? data.metas.reduce((a, b) => a + parseFloat(b || 0), 0) / data.metas.length
+      : 2000;
+
+    const previsoeComoGastos = previsoes.map(p => ({
+      ...p,
+      valor: metaMedia - parseFloat(p.valor)
+    }));
+
+    // Monta labels
+    const labels = [...meses, ...previsoeComoGastos.map(p => p.mes)];
+
+    // Monta valores (histórico + previsões convertidas)
+    const valoresGrafico = [
+      ...valoresHistoricos,
+      ...previsoeComoGastos.map(p => parseFloat(p.valor))
+    ];
+
+    // Cores
+    const cores = valoresHistoricos.map(() => '#3b82f6')
+      .concat(previsoeComoGastos.map(p => parseFloat(p.valor) < metaMedia ? '#10b981' : '#ef4444'));
+
+  const ctx = document.getElementById('graficoPredicao').getContext('2d');
+
+  // Destroi gráfico anterior
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: ' gasto Previstos',
+          data: valoresGrafico,
+          borderColor: '#3b82f6',
+          backgroundColor: cores.map((cor, idx) => {
+            const opacidade = idx < valoresHistoricos.length ? 0.3 : 0.2;
+            return cor.substring(0, 7) + '50'; // Adiciona transparência
+          }),
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: cores
+        },
+        // Linha de meta
+        {
+          label: 'Meta Mensal',
+          data: Array(labels.length).fill(data.meta ? parseFloat(data.meta) : null),
+          borderColor: '#ff9800',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          tension: 0,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: '#fff',
+            font: { size: 12 }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#888',
+            callback: function(value) {
+              return 'R$ ' + value.toLocaleString('pt-BR');
+            }
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        x: {
+          ticks: {
+            color: '#888'
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        }
+      }
+    }
+  });
+
+  // Mostra tendência
+  const tendencia = data.tendencia === 'PIORANDO' ? '🔴 PIORANDO' : '🟢 MELHORANDO';
+  const inclinacao = parseFloat(data.inclinacao);
+
+  const mensagem = `Sua tendência de gastos está ${tendencia}. Variação mensal: ${inclinacao > 0 ? '+' : ''}R$ ${Math.abs(inclinacao).toFixed(2)}`;
+
+  toast(mensagem);
+  document.getElementById('graficoBox').style.display = 'block';
+}
+
 
 
 

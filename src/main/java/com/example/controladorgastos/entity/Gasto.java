@@ -52,8 +52,12 @@ public class Gasto {
 
     @Column(name = "parcelaAtual")
     private Integer parcelaAtual;
+
     @Column(name = "valorParcela")
     private  BigDecimal valorParcela;
+
+    @Column(name = "grupoParcelamento")
+    private String grupoParcelamento;
 }
 
 

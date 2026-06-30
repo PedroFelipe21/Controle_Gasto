@@ -21,6 +21,9 @@ public class UsuarioService {
 
     public Usuario cadastrar(CadastroDTO dto) {
 
+
+
+
         if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new RuntimeException("Email já cadastrado");
         }
